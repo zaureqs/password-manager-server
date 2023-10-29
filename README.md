@@ -11,7 +11,7 @@ A brief description of your Node.js application.
 
 1. Clone the repository:
     ```base
-        git clone https://github.com/YOUR_USERNAME/password-manager-server
+        git clone https://github.com/zaureqs/password-manager-server
     ```
 
 2. Change directory to the project root:
