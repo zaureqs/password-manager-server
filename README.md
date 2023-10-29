@@ -52,7 +52,7 @@ npm run dev
 This will start the application on port 5000 by default. You can visit the application in your web browser at `https://localhost/5000`.
 
 
-## **or client side see [Password Manager Client](https://github.com/zaureqs/password-manager-client)**
+## For client side see [Password Manager Client](https://github.com/zaureqs/password-manager-client)
 
 ## Deployment
 
