@@ -58,7 +58,7 @@ This will start the application on port 5000 by default. You can visit the appli
 
 To deploy the application to production, you can use a variety of different tools and services. Some popular options include:
 
-##1. Heroku
+1. Heroku
 2. AWS Elastic Beanstalk
 3. Azure App Service
 4. digitalocean
