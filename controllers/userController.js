@@ -1,15 +1,16 @@
 const prisma = require("../prisma/prismaClient");
 const cookieToken = require("../utils/cookieToken");
 const bcrypt = require("bcrypt");
+const { v4: uuidv4 } = require("uuid");
+const sendVerificationEmail = require("../helpers/sendVerificationEmail");
 
 exports.signup = async (req, res) => {
   try {
-    
     const { name, email, password } = req.body;
     if (!name || !email || !password) {
       return res.status(400).send("Please provide all fields");
     }
-    const findUser = await prisma.user.findUnique({
+    let findUser = await prisma.user.findUnique({
       where: {
         email,
       },
@@ -18,7 +19,10 @@ exports.signup = async (req, res) => {
       return res.status(400).send("user already exists");
     }
 
-    const hashedPassword = await bcrypt.hash(password, parseInt(process.env.Salt_rounds));
+    const hashedPassword = await bcrypt.hash(
+      password,
+      parseInt(process.env.Salt_rounds)
+    );
     const user = await prisma.user.create({
       data: {
         name,
@@ -26,6 +30,21 @@ exports.signup = async (req, res) => {
         password: hashedPassword,
       },
     });
+
+    const expirationDate = new Date(Date.now() + 60 * 60000);
+
+    const token = await prisma.tokenSchema.create({
+      data: {
+        userId: user.id,
+        token: uuidv4().replace(/-/g, "").toString(),
+        expiresAt: expirationDate.toISOString(),
+      },
+    });
+
+    const url = `${process.env.FRONTEND_URL}/verifyemail?id=${user.id}&token=${token.token}`;
+
+    await sendVerificationEmail(user.email, user.name, url);
+
     // send user to token
     cookieToken(user, res);
   } catch (err) {
@@ -61,7 +80,7 @@ exports.login = async (req, res) => {
         message: "user not found ! please provide a valid user id",
       });
     }
-    
+
     const passwordMatch = await bcrypt.compare(password, user.password);
 
     //when password is incorrect
@@ -69,6 +88,42 @@ exports.login = async (req, res) => {
       return res.status(200).json({
         success: false,
         message: "enter valid password",
+      });
+    }
+
+    if (!user.verified) {
+      const findToken = await prisma.tokenSchema.findUnique({
+        where: {
+          userId: user.id,
+        }
+      })
+
+      if(findToken){
+        const deleteToken = await prisma.tokenSchema.delete({
+          where: {
+            userId: user.id,
+          }
+        })
+      }
+
+      const expirationDate = new Date(Date.now() + 60 * 60000);
+
+      const token = await prisma.tokenSchema.create({
+        data: {
+          userId: user.id,
+          token: uuidv4().replace(/-/g, "").toString(),
+          expiresAt: expirationDate.toISOString(),
+        },
+      });
+
+      const url = `${process.env.FRONTEND_URL}/verifyemail?id=${user.id}&token=${token.token}`;
+
+      await sendVerificationEmail(user.email, user.name, url);
+
+      return res.status(200).json({
+        success: false,
+        message:
+          "verify your email, verification link send to your email address",
       });
     }
 
@@ -126,5 +181,63 @@ exports.deleteUser = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).send("An error occurred in deletion");
+  }
+};
+
+//user email verification
+
+exports.verifyUser = async (req, res) => {
+  try {
+    const { id, verificationToken } = req.body.data;
+    console.log(verificationToken);
+
+    const user = await prisma.user.findUnique({
+      where: {
+        id: id,
+      },
+    });
+
+    if (!user)
+      return res.status(400).send({
+        success: false,
+        message: "Invalid link",
+      });
+
+    const token = await prisma.tokenSchema.findUnique({
+      where: {
+        userId: user.id,
+        token: verificationToken,
+      },
+    });
+
+    if (!token)
+      return res.status(400).send({
+        success: false,
+        message: "Invalid link",
+      });
+
+    
+
+    const updatedUser = await prisma.User.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        verified: true,
+      },
+    });
+    console.log(updatedUser);
+    const deletedToken = await prisma.tokenSchema.delete({
+      where: {
+        id: token.id,
+      },
+    });
+
+    res.status(200).send({
+      success: true,
+      message: "Email verified successfully",
+    });
+  } catch (error) {
+    res.status(500).send({ message: "Internal Server Error" });
   }
 };

@@ -17,7 +17,7 @@ model Secret {
   username String ?
   email    String ?
   password String ?
-  userId   String? @db.ObjectId
+  userId   String @db.ObjectId
   createdat     DateTime  @default(now())
   updatedat     DateTime  @default(now())
 }
@@ -28,4 +28,14 @@ model User {
   email    String    @unique
   password String
   joineddate     DateTime  @default(now())
+  verified   Boolean   @default(false)
+}
+
+
+model TokenSchema{
+  id       String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @unique @db.ObjectId
+  token String
+  createdat   DateTime @default(now())
+  expiresAt  DateTime
 }
