@@ -7,7 +7,7 @@
     "node": "18.x"
   },
   "scripts": {
-    "build": "npx prisma db push && npx prisma generate",
+    "build": "prisma generate",
     "start": "node app.js",
     "dev": "nodemon app.js"
   },
