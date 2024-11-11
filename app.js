@@ -30,10 +30,7 @@ app.use(cookieParser());
 //     optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 //   }));
 
-app.use(cors());
-
-
-
+// app.use(cors());
   const limiter = rateLimit({
 	windowMs: 15 * 60 * 1000, // 15 minutes
 	limit: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes).
